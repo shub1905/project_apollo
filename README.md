@@ -1,2 +1,2 @@
 # project_apollo
-AML: Project App
+Advanced Machine Learning: Apollo Project
