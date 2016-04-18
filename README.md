@@ -1,10 +1,7 @@
 # project_apollo
 Advanced Machine Learning: Apollo Project
 
-## The Plan (for reference :D)
-Here's our logo (hover to see the title text):
-
-Inline-style: 
+## The Plan (for reference :D)  
 ![alt text](The_plan.jpg "The Plan")
 
 
