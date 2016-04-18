@@ -1,8 +1,8 @@
 '''
 File to generate mat files
 Variable present in mat files
-ArtistMapping(Dictionary): {artist_id: artist_name}
-data(2D Array): {artist_id,MFCC}
+ArtistMapping(Dictionary): {artist_id: (echo_nest_id, artist_name)}
+data(2D Array): {artist_id, MFCC}
 '''
 
 
@@ -36,12 +36,14 @@ def hdf_song_object(min_timbre=100, timbre_width=12):
 
     gen = parse_data_files()
     ArtistMapping = {}
+    artist_map_id_echo = {}
     data = numpy.zeros((0, min_timbre * timbre_width + 1))
     artist_count = 0
 
     for file_name in gen:
         f = h5py.File(file_name, 'r')
         print file_name
+
         f_meta = f['metadata']['songs']
         f_analysis = f['analysis']['segments_timbre']
 
@@ -56,6 +58,7 @@ def hdf_song_object(min_timbre=100, timbre_width=12):
 
         current_artist_count = ArtistMapping.get(f_artist_id, (artist_count, 'foo'))[0]
         ArtistMapping[f_artist_id] = (current_artist_count, f_artist_name)
+        artist_map_id_echo[str(current_artist_count)] = (f_artist_id, f_artist_name.strip())
         artist_count = artist_count + 1
 
         segments = f_analysis[:min_timbre].reshape(1, min_timbre * timbre_width)
@@ -63,10 +66,11 @@ def hdf_song_object(min_timbre=100, timbre_width=12):
         data = numpy.vstack((data, segments))
         f.close()
 
-    matlab_file_mfcc = open('dataMFCC.mat', 'w')
-    scipy.io.savemat(matlab_file, ArtistMapping)
+    matlab_file_mfcc = open('data/dataMFCC.mat', 'w')
+    scipy.io.savemat(matlab_file_mfcc, {'data': data})
 
-    matlab_file_artist = open('dataartist.mat', 'w')
-    scipy.io.savemat(matlab_file, {'data': data})
+    matlab_file_artist = open('data/dataArtist.mat', 'w')
+    scipy.io.savemat(matlab_file_artist, artist_map_id_echo)
+
 
 hdf_song_object()
