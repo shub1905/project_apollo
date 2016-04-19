@@ -12,7 +12,7 @@ class KNN(object):
 
     def __init__(self):
         self.data_x, self.data_y = load_data(theano_shared=False)
-        indx_split = self.data_x.shape[0]*.8//1
+        indx_split = int(self.data_x.shape[0]*.8)
         self.train_x, _, self.test_x = numpy.split(self.data_x, [indx_split, indx_split], axis=0)
         self.train_y, _, self.test_y = numpy.split(self.data_y, [indx_split, indx_split], axis=0)
 
