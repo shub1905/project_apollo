@@ -18,11 +18,12 @@ def shared_dataset(data_x, data_y, borrow=True):
     return shared_x, theano.tensor.cast(shared_y, 'int32')
 
 
-def load_data(data_path='data/dataMFCC.mat'):
+def load_data(data_path='data/dataMFCC.mat', theano_shared=True):
     data_xy = scipy.io.loadmat(data_path)['data']
     data_y, _, data_x = numpy.split(data_xy, [1, 1], axis=1)
     data_y = data_y.reshape(data_y.shape[0])
-    print data_x.shape, data_y.shape
-    return shared_dataset(data_x, data_y)
+    if theano_shared:
+        return shared_dataset(data_x, data_y)
+    else:
+        return data_x, data_y
 
-load_data()
