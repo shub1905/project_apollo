@@ -154,7 +154,7 @@ def load_data(dataset):
     :type dataset: string
     :param dataset: the path to the dataset (here MNIST)
     '''
-
+    print(dataset)
     #############
     # LOAD DATA #
     #############

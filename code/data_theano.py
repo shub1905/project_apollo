@@ -18,12 +18,26 @@ def shared_dataset(data_x, data_y, borrow=True):
     return shared_x, theano.tensor.cast(shared_y, 'int32')
 
 
-def load_data(data_path='data/dataMFCC.mat', theano_shared=True):
+def load_data(data_path='data/dataMFCC.mat', theano_shared=True, split=0.8):
     data_xy = scipy.io.loadmat(data_path)['data']
     data_y, _, data_x = numpy.split(data_xy, [1, 1], axis=1)
-    data_y = data_y.reshape(data_y.shape[0])
-    if theano_shared:
-        return shared_dataset(data_x, data_y)
-    else:
-        return data_x, data_y
+    indx_split = int(data_x.shape[0]*split)
+    train_x, _, test_x = numpy.split(data_x, [indx_split, indx_split], axis=0)
+    train_y, _, test_y = numpy.split(data_y, [indx_split, indx_split], axis=0)
+	
+    valid_split = int(train_x.shape[0]*0.25)
+    
+    valid_x, _, valid_x = numpy.split(train_x, [valid_split, valid_split], axis=0)
+    valid_y, _, valid_y = numpy.split(train_y, [valid_split, valid_split], axis=0)
+	
 
+
+    #data_y = data_y.reshape(data_y.shape[0])
+    print data_x.shape, data_y.shape
+    print train_x.shape, train_y.shape
+    print valid_x.shape, valid_y.shape
+    print test_x.shape, test_x.shape
+    if theano_shared:
+        return (shared_dataset(train_x, train_y), shared_dataset(valid_x,valid_y), shared_dataset(test_x, test_y)),len(set(train_y.reshape(train_y.shape[0])))
+    else:
+        return ((train_x, train_y),(valid_x,valid_y), (test_x, test_y)),len(set(train_y.reshape(train_y.shape[0])))

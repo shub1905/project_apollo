@@ -42,7 +42,7 @@ import theano
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 
-from logistic_sgd import load_data
+from data_theano import load_data
 from utils import tile_raster_images
 
 try:
@@ -278,8 +278,8 @@ def test_dA(learning_rate=0.1, training_epochs=15,
     :param dataset: path to the picked dataset
 
     """
-    datasets = load_data(dataset)
-    train_set_x, train_set_y = datasets[0]
+    #datasets = load_data()
+    ((test_set_x,test_set_y),(train_set_x, train_set_y)) = load_data()
 
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
@@ -305,8 +305,8 @@ def test_dA(learning_rate=0.1, training_epochs=15,
         numpy_rng=rng,
         theano_rng=theano_rng,
         input=x,
-        n_visible=28 * 28,
-        n_hidden=500
+        n_visible=1200,
+        n_hidden=2400
     )
 
     cost, updates = da.get_cost_updates(
@@ -345,11 +345,8 @@ def test_dA(learning_rate=0.1, training_epochs=15,
     print(('The no corruption code for file ' +
            os.path.split(__file__)[1] +
            ' ran for %.2fm' % ((training_time) / 60.)), file=sys.stderr)
-    image = Image.fromarray(
-        tile_raster_images(X=da.W.get_value(borrow=True).T,
-                           img_shape=(28, 28), tile_shape=(10, 10),
-                           tile_spacing=(1, 1)))
-    image.save('filters_corruption_0.png')
+    #image = Image.fromarray(tile_raster_images(X=da.W.get_value(borrow=True).T,img_shape=(28, 28), tile_shape=(10, 10),tile_spacing=(1, 1)))
+    #image.save('filters_corruption_0.png')
 
     # start-snippet-3
     #####################################
@@ -363,8 +360,8 @@ def test_dA(learning_rate=0.1, training_epochs=15,
         numpy_rng=rng,
         theano_rng=theano_rng,
         input=x,
-        n_visible=28 * 28,
-        n_hidden=500
+        n_visible=1200,
+        n_hidden=2400
     )
 
     cost, updates = da.get_cost_updates(
@@ -406,11 +403,8 @@ def test_dA(learning_rate=0.1, training_epochs=15,
     # end-snippet-3
 
     # start-snippet-4
-    image = Image.fromarray(tile_raster_images(
-        X=da.W.get_value(borrow=True).T,
-        img_shape=(28, 28), tile_shape=(10, 10),
-        tile_spacing=(1, 1)))
-    image.save('filters_corruption_30.png')
+    #image = Image.fromarray(tile_raster_images(X=da.W.get_value(borrow=True).T,img_shape=(28, 28), tile_shape=(10, 10),tile_spacing=(1, 1)))
+    #image.save('filters_corruption_30.png')
     # end-snippet-4
 
     os.chdir('../')
