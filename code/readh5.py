@@ -11,17 +11,14 @@ from collections import defaultdict
 import h5py
 import os
 import numpy
+import time
+start_time = time.time()
 
 segments_timbre_size = 100
 
 DATA_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
 
 OUTPUT_FILE_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
-
-sample_file = 'A/A/A/TRAAAAW128F429D538.h5'
-
-f = h5py.File(DATA_DIR + sample_file, 'r')
-f['analysis']
 
 #%%
 
@@ -47,8 +44,11 @@ def artist_mapping(min_songs=4):
     _files = parse_data_files()
     artist_names = {}
     artist_track_counts = defaultdict(int)
-
+    counter = 0
     for file_name in _files:
+        counter += 1
+        if counter % 100 == 0:
+            print counter, time.time()-start_time
         # print file_name
         if not file_name.endswith('.h5'):
             continue
@@ -62,6 +62,7 @@ def artist_mapping(min_songs=4):
 
         artist_names[f_artist_id] = f_artist_name
         artist_track_counts[f_artist_id] += 1
+        f.close()
 
     artist_track_counts = {key:artist_track_counts[key] for key in artist_track_counts 
                                             if artist_track_counts[key] >= min_songs}
@@ -138,12 +139,13 @@ def generate_data(min_segments=60, min_songs=10):
 
         _artist_id_indx = _meta.dtype.names.index('artist_id')
         _artist_id = _meta[0][_artist_id_indx]
-        artist_idx = artist_idxs[_artist_id]
-
-        if timbres.shape[0] < min_segments:
+        
+        if timbres.shape[0] < min_segments or _artist_id not in artist_idxs:
             # skip adding song features is timbre shape < min_timbre
             # or song_count is less than min_songs
             continue
+        
+        artist_idx = artist_idxs[_artist_id]
         
         segments = timbres[:min_segments].reshape(min_segments*12)
         data[counter][(min_segments*12+4)] = (starts[1:] - starts[:-1]).mean()
