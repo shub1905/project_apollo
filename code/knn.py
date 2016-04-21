@@ -11,10 +11,13 @@ from multiprocessing import Lock, Process, Value
 class KNN(object):
 
     def __init__(self):
-        self.data_x, self.data_y = load_data(theano_shared=False)
-        indx_split = int(self.data_x.shape[0]*.8)
-        self.train_x, _, self.test_x = numpy.split(self.data_x, [indx_split, indx_split], axis=0)
-        self.train_y, _, self.test_y = numpy.split(self.data_y, [indx_split, indx_split], axis=0)
+        self.train, self.valid, self.test = load_data(theano_shared=False)
+        self.train_x, self.train_y = self.train
+        self.test_x, self.test_y = self.test
+        self.valid_x, self.valid_y = self.valid
+
+        self.train_y = self.train_y.reshape(self.train_y.shape[0])
+        self.test_y = self.test_y.reshape(self.test_y.shape[0])
 
         self.accurate = Value('i', 0)
         self.lck = Lock()
@@ -31,40 +34,36 @@ class KNN(object):
     def fit_data(self):
         self.neigh.fit(self.train_x, self.train_y)
 
-    def test_accuracy(self, st, en, thread_number):
+    def test_accuracy(self, st, en, thread_number, var_x, var_y):
         for indx in range(st, en):
-            data_pt = self.test_x[indx]
+            data_pt = var_x[indx]
             temp = self.neigh.predict(data_pt.reshape(1, -1))[0]
 
-            # if indx%100 == 0:
-            # 	self.lck.acquire()
-            # 	print self.accurate
-            # 	self.lck.release()
-
-            if temp == self.test_y[indx]:
+            if temp == var_y[indx]:
                 self.lck.acquire()
-                print self.accurate.value,
-                self.accurate.value +=  + 1
+                # print self.accurate.value,
+                self.accurate.value += + 1
                 print self.accurate.value, indx,
-                print 'Thread: {}'.format(thread_number)
+                # print 'Thread: {}'.format(thread_number)
                 self.lck.release()
 
-    def testing(self):
+    def testing(self, data_x, data_y):
+        self.accurate.value = 0
         processes = []
-        ranges = range(0, self.test_y.shape[0], self.test_y.shape[0] // 10)
+        ranges = range(0, data_y.shape[0], data_y.shape[0] // 10)
         for x in range(len(ranges) - 1):
-            p = Process(target=self.test_accuracy,
-                        args=(ranges[x], ranges[x + 1], x))
+            p = Process(target=self.test_accuracy, args=(ranges[x], ranges[x + 1], x, data_x, data_y))
             p.start()
             processes.append(p)
 
         _ = map(lambda x: x.join(), processes)
 
-        self.test_accuracy = self.accurate.value * 1.0 / self.test_y.shape[0]
+        self.accuracy_percentage = self.accurate.value * 100. / data_y.shape[0]
+        print 'Accuracy: {}'.format(self.accuracy_percentage)
+        print 'Accurate: {}/{}'.format(self.accurate.value, data_y.shape[0])
 
 knn_obj = KNN()
-print knn_obj.test_y.shape
 knn_obj.fit_data()
-knn_obj.testing()
-print knn_obj.test_accuracy * 100
-print knn_obj.accurate.value, knn_obj.test_y.shape[0]
+knn_obj.testing(knn_obj.test_x, knn_obj.test_y)
+knn_obj.testing(knn_obj.valid_x, knn_obj.valid_y)
+knn_obj.testing(knn_obj.train_x, knn_obj.train_y)
