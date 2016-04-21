@@ -27,13 +27,15 @@ class GMM:
             data_pt = var_x[indx]
             temp = self.model.predict(data_pt.reshape(1, -1))[0]
 
+            self.lck.acquire()
             if temp == var_y[indx]:
-                self.lck.acquire()
-                # print self.accurate.value,
+                print self.accurate.value,
                 self.accurate.value += + 1
-                # print self.accurate.value, indx,
-                # print 'Thread: {}'.format(thread_number)
-                self.lck.release()
+                print self.accurate.value, indx,
+                print 'Thread: {}'.format(thread_number)
+            else:
+                print 'Thread: {} {}-{}'.format(thread_number, temp, var_y[indx])
+            self.lck.release()
 
     def testing(self, data_x, data_y):
         self.accurate.value = 0
@@ -51,7 +53,9 @@ class GMM:
         print 'Accurate: {}/{}'.format(self.accurate.value, data_y.shape[0])
 
 gmm_obj = GMM()
+print 'Data Loaded'
 gmm_obj.fit_data()
+print 'Model Fitting Done'
 gmm_obj.testing(gmm_obj.test_x, gmm_obj.test_y)
-gmm_obj.testing(gmm_obj.valid_x, gmm_obj.valid_y)
-gmm_obj.testing(gmm_obj.train_x, gmm_obj.train_y)
+# gmm_obj.testing(gmm_obj.valid_x, gmm_obj.valid_y)
+# gmm_obj.testing(gmm_obj.train_x, gmm_obj.train_y)
