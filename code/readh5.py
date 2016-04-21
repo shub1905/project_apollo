@@ -104,9 +104,9 @@ def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
 
         # print file_name
         ArtistIdMapping[str(artist_id)][1].append(counter)
-        # segments = f_analysis[:min_timbre].reshape(min_timbre * timbre_width)
-        # data[counter][1:] = segments
-        # data[counter][0] = artist_id
+        segments = f_analysis[:min_timbre].reshape(min_timbre * timbre_width)
+        data[counter][1:] = segments
+        data[counter][0] = artist_id
         counter += 1
         f.close()
 
