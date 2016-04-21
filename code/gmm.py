@@ -1,14 +1,10 @@
-'''
-K nearest neighbours
-'''
-
-from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
+from sklearn import mixture
 from data_theano import load_data
-import numpy
 from multiprocessing import Lock, Process, Value
 
 
-class KNN(object):
+class GMM:
 
     def __init__(self):
         self.train, self.valid, self.test = load_data(theano_shared=False)
@@ -19,25 +15,17 @@ class KNN(object):
         self.train_y = self.train_y.reshape(self.train_y.shape[0])
         self.test_y = self.test_y.reshape(self.test_y.shape[0])
 
-        self.accurate = Value('i', 0)
-        self.lck = Lock()
-        # self.unique_artists()
-        # self.centers = len(self.artists_map.keys())
-        self.neigh = KNeighborsClassifier(weights='distance', n_jobs=-1, p=1)
+        self.classes_number = len(set(self.train_y))
 
-    def unique_artists(self):
-        self.artists_map = {}
-        for artist in self.data_y:
-            temp = self.artists_map.get(artist, 0)
-            self.artists_map[artist] = temp + 1
+        self.model = mixture.GMM(n_components=self.classes_number, covariance_type='full')
 
     def fit_data(self):
-        self.neigh.fit(self.train_x, self.train_y)
+        self.model.fit(self.train_x)
 
     def test_accuracy(self, st, en, thread_number, var_x, var_y):
         for indx in range(st, en):
             data_pt = var_x[indx]
-            temp = self.neigh.predict(data_pt.reshape(1, -1))[0]
+            temp = self.model.predict(data_pt.reshape(1, -1))[0]
 
             if temp == var_y[indx]:
                 self.lck.acquire()
@@ -62,8 +50,8 @@ class KNN(object):
         print 'Accuracy: {}'.format(self.accuracy_percentage)
         print 'Accurate: {}/{}'.format(self.accurate.value, data_y.shape[0])
 
-knn_obj = KNN()
-knn_obj.fit_data()
-knn_obj.testing(knn_obj.test_x, knn_obj.test_y)
-knn_obj.testing(knn_obj.valid_x, knn_obj.valid_y)
-knn_obj.testing(knn_obj.train_x, knn_obj.train_y)
+gmm_obj = GMM()
+gmm_obj.fit_data()
+gmm_obj.testing(gmm_obj.test_x, gmm_obj.test_y)
+gmm_obj.testing(gmm_obj.valid_x, gmm_obj.valid_y)
+gmm_obj.testing(gmm_obj.train_x, gmm_obj.train_y)
