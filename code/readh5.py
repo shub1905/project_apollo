@@ -5,28 +5,36 @@ ArtistMapping(Dictionary): {artist_id: (echo_nest_id, artist_name)}
 data(2D Array): {artist_id, MFCC}
 '''
 
+#%%
 
+from collections import defaultdict
 import h5py
 import os
-import scipy.io
 import numpy
-import pudb
 
 segments_timbre_size = 100
 
+DATA_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
 
-def parse_data_files(folder='MillionSongSubset/data/'):
-    pwd = os.getcwd()
-    if not os.path.exists(pwd + '/' + folder):
-        print pwd + '/' + folder, 'Does not exists'
-        return
+OUTPUT_FILE_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
 
-    MediaPath = pwd + '/' + folder
-    file_path_gen = os.walk(MediaPath)
+sample_file = 'A/A/A/TRAAAAW128F429D538.h5'
+
+f = h5py.File(DATA_DIR + sample_file, 'r')
+f['analysis']
+
+#%%
+
+def parse_data_files(folder=DATA_DIR):
+    
+    if not os.path.exists(DATA_DIR):
+        print DATA_DIR, ' does not exist'
+        raise
+
+    file_path_gen = os.walk(DATA_DIR)
     for root, dirs, file_names in file_path_gen:
         for file_ in file_names:
             yield root + '/' + file_
-
 
 def artist_mapping(min_songs=4):
     # TODO: use summary file in additional files instead of parsing whole dataset
@@ -36,10 +44,11 @@ def artist_mapping(min_songs=4):
     every artist must have atleast min_songs in the dataset
     '''
     print 'Generating Mapping...'
-    gen = parse_data_files()
-    ArtistMapping = {}
+    _files = parse_data_files()
+    artist_names = {}
+    artist_track_counts = defaultdict(int)
 
-    for file_name in gen:
+    for file_name in _files:
         # print file_name
         if not file_name.endswith('.h5'):
             continue
@@ -51,70 +60,23 @@ def artist_mapping(min_songs=4):
         f_artist_id = f_meta[0][f_artist_id_indx]
         f_artist_name = f_meta[0][f_artist_name_indx]
 
-        temp = ArtistMapping.get(f_artist_id, [0, 'foo'])[0]
-        ArtistMapping[f_artist_id] = (temp + 1, f_artist_name)
+        artist_names[f_artist_id] = f_artist_name
+        artist_track_counts[f_artist_id] += 1
 
-    removal_arts = []
+    artist_track_counts = {key:artist_track_counts[key] for key in artist_track_counts 
+                                            if artist_track_counts[key] >= min_songs}
+    
+    artist_names = {key:artist_names[key] for key in artist_names
+                                                        if key in artist_track_counts}
+    
+    return artist_names, artist_track_counts
 
-    for art in ArtistMapping:
-        if ArtistMapping[art][0] < min_songs:
-            removal_arts.append(art)
-
-    for art in removal_arts:
-        del(ArtistMapping[art])
-
-    current_artist = 0
-    ArtistIdMapping = {}
-
-    for art in ArtistMapping:
-        temp = ArtistMapping[art]
-        ArtistIdMapping[str(current_artist)] = (art, [])
-        ArtistMapping[art] = (temp[0], temp[1], current_artist)
-        current_artist += 1
-
-    return ArtistMapping, ArtistIdMapping
-
-
-def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
-    ArtistMapping, ArtistIdMapping = artist_mapping(min_songs=min_songs)
-    number_rows = sum(map(lambda x: x[0], ArtistMapping.values()))
-
-    data = numpy.zeros((number_rows, min_timbre * timbre_width + 1))
-    gen = parse_data_files()
-    counter = 0
-
-    print 'Reading Data...'
-    for file_name in gen:
-        if not file_name.endswith('.h5'):
-            continue
-
-        f = h5py.File(file_name, 'r')
-
-        f_meta = f['metadata']['songs']
-        f_analysis = f['analysis']['segments_timbre']
-
-        f_artist_echo_id_indx = f_meta.dtype.names.index('artist_id')
-        f_artist_echo_id = f_meta[0][f_artist_echo_id_indx]
-        artist_id = ArtistMapping.get(f_artist_echo_id, (-1, -1, -1))[2]
-
-        if f_analysis.shape[0] < min_timbre or artist_id == -1:
-            # skip adding song features is timbre shape < min_timbre
-            # or song_count is less than min_songs
-            continue
-
-        # print file_name
-        ArtistIdMapping[str(artist_id)][1].append(counter)
-        segments = f_analysis[:min_timbre].reshape(min_timbre * timbre_width)
-        data[counter][1:] = segments
-        data[counter][0] = artist_id
-        counter += 1
-        f.close()
-
-    return ArtistMapping, ArtistIdMapping, data
-
+"""
 
 def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
-    ArtistMapping, ArtistIdMapping, data = generate_data(min_timbre=min_timbre, timbre_width=timbre_width, min_songs=min_songs)
+    ArtistMapping, ArtistIdMapping, data = generate_data(min_timbre=min_timbre, 
+                                                         timbre_width=timbre_width, 
+                                                         min_songs=min_songs)
     train = numpy.zeros((0, min_timbre * timbre_width + 1))
     validation = numpy.zeros((0, min_timbre * timbre_width + 1))
     test = numpy.zeros((0, min_timbre * timbre_width + 1))
@@ -143,7 +105,71 @@ def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
     numpy.save('data/' + data_file + '_valid', validation, allow_pickle=True)
     return ArtistMapping, ArtistIdMapping, train, validation, test
 
+"""
 
+def generate_data(min_segments=60, min_songs=10):
+    
+    #ArtistMapping, ArtistIdMapping = artist_mapping(min_songs=min_songs)
+    artist_names, artist_track_counts = artist_mapping(min_songs=min_songs)
+    number_rows = sum([val for (key, val) in artist_track_counts.iteritems()])
+    artist_idxs = dict(zip(sorted(artist_names.keys()), range(len(artist_names))))
+
+    number_columns = 1 + min_segments * 12 + 14
+    data = numpy.zeros((number_rows, number_columns))
+    _files = parse_data_files()
+    counter = 0
+
+    print 'Reading Data...'
+    
+    ### Adding the additional "dumb" meta-features - number of segments, averages of
+    ### timbres and average segment length
+    
+    for file_name in _files:
+        if not file_name.endswith('.h5'):
+            continue
+
+        f = h5py.File(file_name, 'r')
+
+        _meta = f['metadata']['songs']
+        _analysis = f['analysis']
+        
+        starts = _analysis['segments_start']
+        timbres = _analysis['segments_timbre']
+
+        _artist_id_indx = _meta.dtype.names.index('artist_id')
+        _artist_id = _meta[0][_artist_id_indx]
+        artist_idx = artist_idxs[_artist_id]
+
+        if timbres.shape[0] < min_segments:
+            # skip adding song features is timbre shape < min_timbre
+            # or song_count is less than min_songs
+            continue
+        
+        segments = timbres[:min_segments].reshape(min_segments*12)
+        data[counter][(min_segments*12+4)] = (starts[1:] - starts[:-1]).mean()
+        data[counter][(min_segments*12+2):(min_segments*12+14)] = timbres.value.mean(0)
+        data[counter][min_segments*12+1] = timbres.shape[0]
+        data[counter][1:(min_segments*12+1)] = segments
+        data[counter][0] = artist_idx
+        counter += 1
+        f.close()
+    
+    data = data[:counter]
+    
+    rand_int = numpy.random.randint(0,100,counter)
+    train_idx = (rand_int<60)
+    rand_int = numpy.random.randint(0,100,sum(~train_idx))
+    valid_idx = (rand_int<50)
+    test_idx = (~valid_idx)
+    
+    numpy.save(OUTPUT_FILE_DIR + 'train', data[train_idx], allow_pickle=True)
+    numpy.save(OUTPUT_FILE_DIR + 'valid', data[~train_idx][valid_idx], allow_pickle=True)
+    numpy.save(OUTPUT_FILE_DIR + 'test', data[~train_idx][test_idx], allow_pickle=True)
+
+if __name__ == '__main__':
+    generate_data()
+
+"""
 def hdf_song_object(min_timbre=100, timbre_width=12):
     '''
     reads hdf files and stores their attributes
@@ -187,3 +213,4 @@ def hdf_song_object(min_timbre=100, timbre_width=12):
 
     matlab_file_artist = open('data/dataArtist.mat', 'w')
     scipy.io.savemat(matlab_file_artist, artist_map_id_echo)
+"""
