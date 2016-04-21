@@ -35,7 +35,7 @@ def artist_mapping(min_songs=4):
     songs with timbre < min_timbre are ignored
     every artist must have atleast min_songs in the dataset
     '''
-
+    print 'Generating Mapping...'
     gen = parse_data_files()
     ArtistMapping = {}
 
@@ -83,6 +83,7 @@ def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
     gen = parse_data_files()
     counter = 0
 
+    print 'Reading Data...'
     for file_name in gen:
         if not file_name.endswith('.h5'):
             continue
@@ -101,7 +102,7 @@ def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
             # or song_count is less than min_songs
             continue
 
-        print file_name
+        # print file_name
         ArtistIdMapping[str(artist_id)][1].append(counter)
         # segments = f_analysis[:min_timbre].reshape(min_timbre * timbre_width)
         # data[counter][1:] = segments
@@ -114,7 +115,33 @@ def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
 
 def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
     ArtistMapping, ArtistIdMapping, data = generate_data(min_timbre=min_timbre, timbre_width=timbre_width, min_songs=min_songs)
-    # numpy.save('data/' + data_file, data, allow_pickle=True)
+    train = numpy.zeros((0, min_timbre * timbre_width + 1))
+    validation = numpy.zeros((0, min_timbre * timbre_width + 1))
+    test = numpy.zeros((0, min_timbre * timbre_width + 1))
+
+    print 'Splitting data...'
+    for artist_id in ArtistIdMapping:
+        indices = ArtistIdMapping[artist_id][1]
+
+        valid_data = data[indices[0]].reshape(1, -1)
+        validation = numpy.vstack((validation, valid_data))
+
+        test_indx = 1 + max(int((len(indices) - 1) * .3), 1)
+
+        for i in range(1, test_indx):
+            test_data = data[indices[i]].reshape(1, -1)
+            test = numpy.vstack((test, test_data))
+
+        for i in range(test_indx, len(indices)):
+            train_data = data[indices[i]].reshape(1, -1)
+            train = numpy.vstack((train, train_data))
+
+    print 'Saving Data...'
+
+    numpy.save('data/' + data_file + '_test', test, allow_pickle=True)
+    numpy.save('data/' + data_file + '_train', train, allow_pickle=True)
+    numpy.save('data/' + data_file + '_valid', validation, allow_pickle=True)
+    return ArtistMapping, ArtistIdMapping, train, validation, test
 
 
 def hdf_song_object(min_timbre=100, timbre_width=12):
@@ -160,6 +187,3 @@ def hdf_song_object(min_timbre=100, timbre_width=12):
 
     matlab_file_artist = open('data/dataArtist.mat', 'w')
     scipy.io.savemat(matlab_file_artist, artist_map_id_echo)
-
-
-# hdf_song_object()
