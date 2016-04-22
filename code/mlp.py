@@ -38,8 +38,8 @@ from logistic_sgd import LogisticRegression
 from data_theano import load_data
 
 
-# start-snippet-1
 class HiddenLayer(object):
+
     def __init__(self, rng, input, n_in, n_out, W=None, b=None,
                  activation=T.tanh):
         """
@@ -112,7 +112,6 @@ class HiddenLayer(object):
         self.params = [self.W, self.b]
 
 
-# start-snippet-2
 class MLP(object):
     """Multi-Layer Perceptron Class
 
@@ -248,10 +247,11 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     index = T.lscalar()  # index to a [mini]batch
     x = T.matrix('x')  # the data is presented as rasterized images
     y = T.ivector('y')  # the labels are presented as 1D vector of
-                        # [int] labels
+    # [int] labels
 
     rng = numpy.random.RandomState(1234)
     n_out_neurons = datasets[1]
+    print (n_out_neurons)
 
     # construct the MLP class
     classifier = MLP(
@@ -332,14 +332,14 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     # early-stopping parameters
     patience = 10000  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is
-                           # found
+    # found
     improvement_threshold = 0.995  # a relative improvement of this much is
-                                   # considered significant
+    # considered significant
     validation_frequency = min(n_train_batches, patience // 2)
-                                  # go through this many
-                                  # minibatche before checking the network
-                                  # on the validation set; in this case we
-                                  # check every epoch
+    # go through this many
+    # minibatche before checking the network
+    # on the validation set; in this case we
+    # check every epoch
 
     best_validation_loss = numpy.inf
     best_iter = 0
@@ -375,7 +375,7 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
-                    #improve patience if loss improvement is good enough
+                    # improve patience if loss improvement is good enough
                     if (
                         this_validation_loss < best_validation_loss *
                         improvement_threshold
@@ -409,4 +409,5 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 
 if __name__ == '__main__':
-    test_mlp()
+    test_mlp(learning_rate=0.1, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
+             data_path='data/mfcc_songs_10_{}.npy', batch_size=20, n_hidden=[1500, 1700, 750, 250])

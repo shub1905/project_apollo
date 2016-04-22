@@ -30,6 +30,7 @@ def load_data(data_path='data/mfcc_{}.npy', theano_shared=True):
     train_y = train_y.reshape(train_y.shape[0])
     test_y = test_y.reshape(test_y.shape[0])
     valid_y = valid_y.reshape(valid_y.shape[0])
+    
     print train_x.shape, train_y.shape
     print valid_x.shape, valid_y.shape
     print test_x.shape, test_y.shape
