@@ -76,8 +76,50 @@ def artist_mapping(min_songs=4):
     return ArtistMapping, ArtistIdMapping
 
 
+def artist_mapping_optimized(min_songs=4, file_name='MillionSongSubset/AdditionalFiles/subset_msd_summary_file.h5'):
+    # TODO: use summary file in additional files instead of parsing whole dataset
+    '''
+    reads hdf files and stores their attributes
+    songs with timbre < min_timbre are ignored
+    every artist must have atleast min_songs in the dataset
+    '''
+    print 'Generating Mapping...'
+    ArtistMapping = {}
+
+    f = h5py.File(file_name, 'r')
+    f_meta = f['metadata']['songs']
+    for song in f_meta:
+        f_artist_id_indx = song.dtype.names.index('artist_id')
+        f_artist_name_indx = song.dtype.names.index('artist_name')
+        f_artist_id = song[f_artist_id_indx]
+        f_artist_name = song[f_artist_name_indx]
+
+        temp = ArtistMapping.get(f_artist_id, [0, 'foo'])[0]
+        ArtistMapping[f_artist_id] = (temp + 1, f_artist_name)
+
+    removal_arts = []
+
+    for art in ArtistMapping:
+        if ArtistMapping[art][0] < min_songs:
+            removal_arts.append(art)
+
+    for art in removal_arts:
+        del(ArtistMapping[art])
+
+    current_artist = 0
+    ArtistIdMapping = {}
+
+    for art in ArtistMapping:
+        temp = ArtistMapping[art]
+        ArtistIdMapping[str(current_artist)] = (art, [])
+        ArtistMapping[art] = (temp[0], temp[1], current_artist)
+        current_artist += 1
+
+    return ArtistMapping, ArtistIdMapping
+
+
 def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
-    ArtistMapping, ArtistIdMapping = artist_mapping(min_songs=min_songs)
+    ArtistMapping, ArtistIdMapping = artist_mapping_optimized(min_songs=min_songs)
     number_rows = sum(map(lambda x: x[0], ArtistMapping.values()))
 
     data = numpy.zeros((number_rows, min_timbre * timbre_width + 1))
@@ -200,3 +242,12 @@ if __name__ == '__main__':
 
     min_sngs = int(sys.argv[1])
     split_data(min_songs=min_sngs)
+    
+    # a = artist_mapping_optimized(min_songs=10)
+    # b = artist_mapping(min_songs=10)
+
+    # for key in a[0]:
+    #     if not key in b[0]:
+    #         print 'Error', key
+    #     else:
+    #         print key, a[0][key], b[0][key]

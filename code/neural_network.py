@@ -222,7 +222,7 @@ class myMLP(object):
     class).
     """
 
-    def __init__(self, rng, input, n_in, n_hidden, n_out, n_hiddenLayers):
+    def __init__(self, rng, input, n_in, n_hidden, n_out, n_hiddenLayers, activation_function=T.tanh):
         """Initialize the parameters for the multilayer perceptron
 
         :type rng: numpy.random.RandomState
@@ -271,7 +271,7 @@ class myMLP(object):
                     input=h_input,
                     n_in=h_in,
                     n_out=n_hidden[i],
-                    activation=T.tanh
+                    activation=activation_function
             ))
 
         # The logistic regression layer gets as input the hidden units

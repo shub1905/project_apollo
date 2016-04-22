@@ -20,7 +20,7 @@ from neural_network import LogisticRegression, HiddenLayer, myMLP, train_nn
 
 
 def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100,
-             batch_size=128, n_hidden=500, n_hiddenLayers=3,
+             batch_size=128, n_hidden=500, n_hiddenLayers=3, activation_function=T.tanh,
              verbose=False, data_path='data/mfcc_songs_10_{}.npy'):
     """
     Wrapper function for training and testing MLP
@@ -93,7 +93,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100,
         n_in=1200,
         n_hidden=n_hidden,
         n_hiddenLayers=n_hiddenLayers,
-        n_out=n_output_neurons
+        n_out=n_output_neurons,
+        activation_function=activation_function
     )
 
     # the cost we minimize during training is the negative log likelihood of
@@ -164,4 +165,4 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100,
 
 
 if __name__ == "__main__":
-    test_mlp(learning_rate=0.01, L1_reg=0, L2_reg=0.0001, n_epochs=20, batch_size=20, n_hidden=500, n_hiddenLayers=1, data_path='data/mfcc_songs_10_{}.npy', verbose=True)
+    test_mlp(learning_rate=0.01, L1_reg=0, L2_reg=0.0001, n_epochs=50, batch_size=20, n_hidden=[1200, 1000], n_hiddenLayers=2, data_path='data/mfcc_{}.npy', verbose=True, activation_function=T.nnet.sigmoid)
