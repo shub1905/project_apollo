@@ -114,7 +114,8 @@ def generate_data(min_timbre=100, timbre_width=12, min_songs=4):
 
 
 def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
-    ArtistMapping, ArtistIdMapping, data = generate_data(min_timbre=min_timbre, timbre_width=timbre_width, min_songs=min_songs)
+    ArtistMapping, ArtistIdMapping, data = generate_data(
+        min_timbre=min_timbre, timbre_width=timbre_width, min_songs=min_songs)
     train = numpy.zeros((0, min_timbre * timbre_width + 1))
     validation = numpy.zeros((0, min_timbre * timbre_width + 1))
     test = numpy.zeros((0, min_timbre * timbre_width + 1))
@@ -138,9 +139,9 @@ def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
 
     print 'Saving Data...'
 
-    numpy.save('data/' + data_file + '_test', test, allow_pickle=True)
-    numpy.save('data/' + data_file + '_train', train, allow_pickle=True)
-    numpy.save('data/' + data_file + '_valid', validation, allow_pickle=True)
+    numpy.save('data/' + data_file + '_songs_{}'.format(min_songs) + '_test', test, allow_pickle=True)
+    numpy.save('data/' + data_file + '_songs_{}'.format(min_songs) + '_train', train, allow_pickle=True)
+    numpy.save('data/' + data_file + '_songs_{}'.format(min_songs) + '_valid', validation, allow_pickle=True)
     return ArtistMapping, ArtistIdMapping, train, validation, test
 
 

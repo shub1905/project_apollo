@@ -27,11 +27,13 @@ def load_data(data_path='data/mfcc_{}.npy', theano_shared=True):
     test_y, _, test_x = numpy.split(test, [1, 1], axis=1)
     valid_y, _, valid_x = numpy.split(valid, [1, 1], axis=1)
 
-    #data_y = data_y.reshape(data_y.shape[0])
+    train_y = train_y.reshape(train_y.shape[0])
+    test_y = test_y.reshape(test_y.shape[0])
+    valid_y = valid_y.reshape(valid_y.shape[0])
     print train_x.shape, train_y.shape
     print valid_x.shape, valid_y.shape
     print test_x.shape, test_y.shape
     if theano_shared:
-        return (shared_dataset(train_x, train_y), shared_dataset(valid_x, valid_y), shared_dataset(test_x, test_y))
+        return (shared_dataset(train_x, train_y), shared_dataset(valid_x, valid_y), shared_dataset(test_x, test_y)), len(set(train_y))
     else:
-        return ((train_x, train_y), (valid_x, valid_y), (test_x, test_y))
+        return ((train_x, train_y), (valid_x, valid_y), (test_x, test_y)), len(set(train_y))
