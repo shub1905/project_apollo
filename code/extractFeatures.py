@@ -10,8 +10,10 @@ data(2D Array): {artist_id, MFCC}
 from collections import defaultdict
 import h5py
 import os
-import numpy
+import pickle
 import time
+
+import numpy
 
 start_time = time.time()
 
@@ -34,17 +36,23 @@ def parse_data_files(folder=DATA_DIR):
         for file_ in file_names:
             yield root + '/' + file_
 
-def artist_mapping(min_songs=4):
+def artist_mapping(from_stats_files=False):
     # TODO: use summary file in additional files instead of parsing whole dataset
     '''
     reads hdf files and stores their attributes
     songs with timbre < min_timbre are ignored
     every artist must have atleast min_songs in the dataset
     '''
+    if from_stats_files:
+        artist_track_durations = pickle.load(open(OUTPUT_FILE_DIR+'artist_track_durations','r'))
+        artist_names = pickle.load(open(OUTPUT_FILE_DIR+'artist_names','r'))
+        return artist_names, artist_track_durations
+    
     print 'Generating Mapping...'
     _files = parse_data_files()
     artist_names = {}
     artist_track_counts = defaultdict(int)
+    artist_track_durations = defaultdict(list)
     counter = 0
     for file_name in _files:
         counter += 1
@@ -61,72 +69,66 @@ def artist_mapping(min_songs=4):
         f_artist_name_indx = f_meta.dtype.names.index('artist_name')
         f_artist_id = f_meta[0][f_artist_id_indx]
         f_artist_name = f_meta[0][f_artist_name_indx]
-
+        if f['analysis']['segments_start'].shape[0]==0:
+            continue        
+        
         artist_names[f_artist_id] = f_artist_name
         artist_track_counts[f_artist_id] += 1
+        if len(artist_track_durations[f_artist_id]) < artist_track_counts[f_artist_id]:
+            artist_track_durations[f_artist_id].extend([0]*10)
+        
+        artist_track_durations[f_artist_id][artist_track_counts[f_artist_id]-1] = \
+                                            f['analysis']['segments_start'][-1]
+        
         f.close()
-
-    artist_track_counts = {key:artist_track_counts[key] for key in artist_track_counts 
-                                            if artist_track_counts[key] >= min_songs}
     
-    artist_names = {key:artist_names[key] for key in artist_names
-                                                        if key in artist_track_counts}
+    artist_track_durations = {key:value[:artist_track_counts[key]]
+                                    for key, value in artist_track_durations.iteritems()}
     
-    return artist_names, artist_track_counts
-
-"""
-
-def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
-    ArtistMapping, ArtistIdMapping, data = generate_data(min_timbre=min_timbre, 
-                                                         timbre_width=timbre_width, 
-                                                         min_songs=min_songs)
-    train = numpy.zeros((0, min_timbre * timbre_width + 1))
-    validation = numpy.zeros((0, min_timbre * timbre_width + 1))
-    test = numpy.zeros((0, min_timbre * timbre_width + 1))
-
-    print 'Splitting data...'
-    for artist_id in ArtistIdMapping:
-        indices = ArtistIdMapping[artist_id][1]
-
-        valid_data = data[indices[0]].reshape(1, -1)
-        validation = numpy.vstack((validation, valid_data))
-
-        test_indx = 1 + max(int((len(indices) - 1) * .3), 1)
-
-        for i in range(1, test_indx):
-            test_data = data[indices[i]].reshape(1, -1)
-            test = numpy.vstack((test, test_data))
-
-        for i in range(test_indx, len(indices)):
-            train_data = data[indices[i]].reshape(1, -1)
-            train = numpy.vstack((train, train_data))
-
-    print 'Saving Data...'
-
-    numpy.save('data/' + data_file + '_test', test, allow_pickle=True)
-    numpy.save('data/' + data_file + '_train', train, allow_pickle=True)
-    numpy.save('data/' + data_file + '_valid', validation, allow_pickle=True)
-    return ArtistMapping, ArtistIdMapping, train, validation, test
-
-"""
-
-def generate_data(min_segments=60, min_songs=10):
+    pickle.dump(artist_track_durations, open(OUTPUT_FILE_DIR+'artist_track_durations','w'))
+    pickle.dump(artist_names, open(OUTPUT_FILE_DIR+'artist_names','w'))
     
-    #ArtistMapping, ArtistIdMapping = artist_mapping(min_songs=min_songs)
-    artist_names, artist_track_counts = artist_mapping(min_songs=min_songs)
-    number_rows = sum([val for (key, val) in artist_track_counts.iteritems()])
-    artist_idxs = dict(zip(sorted(artist_names.keys()), range(len(artist_names))))
+    return artist_names, artist_track_durations
 
-    number_columns = 1 + min_segments * 12 + 14
-    data = numpy.zeros((number_rows, number_columns))
+def make_frame_wise(features, starts, min_duration, window_width):
+    
+    no_frames = int(min_duration/window_width)
+    out = numpy.zeros((no_frames,features.shape[1]))
+    inds = numpy.zeros((no_frames,), dtype='int')
+    segment_counter = 0
+    for i in xrange(no_frames):
+        while segment_counter<(starts.shape[0]-1) and starts[segment_counter + 1] <= window_width*(i+1):
+            segment_counter += 1
+        inds[i] = segment_counter
+    
+    out = features.value[inds]
+    out = out.reshape(out.shape[0]*out.shape[1])
+    return out
+    
+def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='left'):
+    
+    artist_names, artist_track_durations = artist_mapping(from_stats_files=False)
+    
+    artist_track_counts = {key:len([t for t in artist_track_durations[key] if t >= min_duration]) 
+                                        for key in artist_track_durations}
+    artist_track_counts = {key:val for key, val in artist_track_counts.iteritems() 
+                                        if val >= min_songs}
+
+    counts = [val for (key, val) in artist_track_counts.iteritems()]
+    print counts
+    number_rows = sum(counts)
+    artist_idxs = dict(zip(sorted(artist_track_counts.keys()), range(len(artist_track_counts))))
+    
+    no_frames = int(min_duration/window_width)
+    no_columns = 1 + no_frames*24
+    data = numpy.zeros((number_rows, no_columns))
     _files = parse_data_files()
-    counter = 0
 
     print 'Reading Data...'
     
     ### Adding the additional "dumb" meta-features - number of segments, averages of
     ### timbres and average segment length
-    
+    counter = 0
     for file_name in _files:
         if not file_name.endswith('.h5'):
             continue
@@ -138,25 +140,30 @@ def generate_data(min_segments=60, min_songs=10):
         
         starts = _analysis['segments_start']
         timbres = _analysis['segments_timbre']
-
+        pitches = _analysis['segments_pitches']
+        
         _artist_id_indx = _meta.dtype.names.index('artist_id')
         _artist_id = _meta[0][_artist_id_indx]
         
-        if timbres.shape[0] < min_segments or _artist_id not in artist_idxs:
-            # skip adding song features is timbre shape < min_timbre
+        if _artist_id not in artist_idxs or min_duration > starts[-1]:
+            # skip adding song features is <DELETED>
             # or song_count is less than min_songs
             f.close()
             continue
         
         artist_idx = artist_idxs[_artist_id]
-        
-        segments = timbres[:min_segments].reshape(min_segments*12)
-        data[counter][(min_segments*12+4)] = (starts[1:] - starts[:-1]).mean()
-        data[counter][(min_segments*12+2):(min_segments*12+14)] = timbres.value.mean(0)
-        data[counter][min_segments*12+1] = timbres.shape[0]
-        data[counter][1:(min_segments*12+1)] = segments
         data[counter][0] = artist_idx
+        data[counter][1:(no_frames*12+1)] = make_frame_wise(timbres, starts, \
+                                                            min_duration, window_width)
+        data[counter][(no_frames*12+1):(no_frames*24+1)] = make_frame_wise(pitches, starts, \
+                                                            min_duration, window_width)
+        #data[counter][(min_segments*12+4)] = (starts[1:] - starts[:-1]).mean()
+        #data[counter][(min_segments*12+2):(min_segments*12+14)] = timbres.value.mean(0)
+        #data[counter][min_segments*12+1] = timbres.shape[0]
+               
         counter += 1
+        if counter % 10 == 0:
+            print counter, time.time()-start_time
         f.close()
     
     data = data[:counter]
@@ -173,49 +180,3 @@ def generate_data(min_segments=60, min_songs=10):
 
 if __name__ == '__main__':
     generate_data()
-
-"""
-def hdf_song_object(min_timbre=100, timbre_width=12):
-    '''
-    reads hdf files and stores their attributes
-    songs with timbre < min_timbre are ignored
-    '''
-
-    gen = parse_data_files()
-    ArtistMapping = {}
-    artist_map_id_echo = {}
-    data = numpy.zeros((0, min_timbre * timbre_width + 1))
-    artist_count = 0
-
-    for file_name in gen:
-        f = h5py.File(file_name, 'r')
-        print file_name
-
-        f_meta = f['metadata']['songs']
-        f_analysis = f['analysis']['segments_timbre']
-
-        f_artist_id_indx = f_meta.dtype.names.index('artist_id')
-        f_artist_name_indx = f_meta.dtype.names.index('artist_name')
-        f_artist_id = f_meta[0][f_artist_id_indx]
-        f_artist_name = f_meta[0][f_artist_name_indx]
-
-        if f_analysis.shape[0] < min_timbre:
-            # skip adding song features is timbre shape < min_timbre
-            continue
-
-        current_artist_count = ArtistMapping.get(f_artist_id, (artist_count, 'foo'))[0]
-        ArtistMapping[f_artist_id] = (current_artist_count, f_artist_name)
-        artist_map_id_echo[str(current_artist_count)] = (f_artist_id, f_artist_name.strip())
-        artist_count = artist_count + 1
-
-        segments = f_analysis[:min_timbre].reshape(1, min_timbre * timbre_width)
-        segments = numpy.insert(segments, 0, current_artist_count, axis=1)
-        data = numpy.vstack((data, segments))
-        f.close()
-
-    matlab_file_mfcc = open('data/dataMFCC.mat', 'w')
-    scipy.io.savemat(matlab_file_mfcc, {'data': data})
-
-    matlab_file_artist = open('data/dataArtist.mat', 'w')
-    scipy.io.savemat(matlab_file_artist, artist_map_id_echo)
-"""
