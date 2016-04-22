@@ -253,9 +253,9 @@ class SdA(object):
         '''
         datasets = load_data()
 
-        train_set_x, train_set_y = datasets[0][0]
-        valid_set_x, valid_set_y = datasets[0][1]
-        train_set_x, train_set_y = datasets[0][2]
+        train_set_x, train_set_y = datasets[0]
+        valid_set_x, valid_set_y = datasets[1]
+        test_set_x, test_set_y = datasets[2]
 
 
         # compute number of minibatches for training, validation and testing
@@ -357,9 +357,9 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
 
     datasets = load_data()
 
-    train_set_x, train_set_y = datasets[0][0]
-    valid_set_x, valid_set_y = datasets[0][1]
-    train_set_x, train_set_y = datasets[0][2]
+    train_set_x, train_set_y = datasets[0]
+    valid_set_x, valid_set_y = datasets[1]
+    test_set_x, test_set_y = datasets[2]
 
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0]
@@ -374,7 +374,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
         numpy_rng=numpy_rng,
         n_ins=1200,
         hidden_layers_sizes=[1500, 2000, 3000],
-        n_outs=datasets[1]
+        n_outs=967
     )
     # end-snippet-3 start-snippet-4
     #########################
