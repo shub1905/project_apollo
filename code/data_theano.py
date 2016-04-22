@@ -35,6 +35,6 @@ def load_data(data_path='data/mfcc_{}.npy', theano_shared=True):
     print valid_x.shape, valid_y.shape
     print test_x.shape, test_y.shape
     if theano_shared:
-        return (shared_dataset(train_x, train_y), shared_dataset(valid_x, valid_y), shared_dataset(test_x, test_y)), len(set(train_y))
+        return (shared_dataset(train_x, train_y), shared_dataset(valid_x, valid_y), shared_dataset(test_x, test_y)), len(set(valid_y))
     else:
-        return ((train_x, train_y), (valid_x, valid_y), (test_x, test_y)), len(set(train_y))
+        return ((train_x, train_y), (valid_x, valid_y), (test_x, test_y)), len(set(valid_y))

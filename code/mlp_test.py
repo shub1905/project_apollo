@@ -12,7 +12,6 @@ import numpy
 import sys
 import time
 import theano
-import pudb
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 
@@ -22,7 +21,7 @@ from neural_network import LogisticRegression, HiddenLayer, myMLP, train_nn
 
 def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100,
              batch_size=128, n_hidden=500, n_hiddenLayers=3,
-             verbose=False, data_path='data/mfcc_{}.npy'):
+             verbose=False, data_path='data/mfcc_songs_10_{}.npy'):
     """
     Wrapper function for training and testing MLP
 
@@ -165,4 +164,5 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100,
 
 
 if __name__ == "__main__":
-    test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100, batch_size=128, n_hidden=[1500, 1700, 750, 250], n_hiddenLayers=4)
+    test_mlp(learning_rate=0.1, L1_reg=0.001, L2_reg=0, n_epochs=25, batch_size=128, n_hidden=[
+             1500, 1700, 750, 250], n_hiddenLayers=4, data_path='data/mfcc_{}.npy', verbose=True)
