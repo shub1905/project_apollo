@@ -8,6 +8,7 @@ data(2D Array): {artist_id, MFCC}
 
 import h5py
 import os
+import sys
 import scipy.io
 import numpy
 import pudb
@@ -142,6 +143,8 @@ def split_data(min_timbre=100, timbre_width=12, min_songs=4, data_file='mfcc'):
     numpy.save('data/' + data_file + '_songs_{}'.format(min_songs) + '_test', test, allow_pickle=True)
     numpy.save('data/' + data_file + '_songs_{}'.format(min_songs) + '_train', train, allow_pickle=True)
     numpy.save('data/' + data_file + '_songs_{}'.format(min_songs) + '_valid', validation, allow_pickle=True)
+    numpy.save('data/' + data_file + '_dict_songs_{}'.format(min_songs), ArtistMapping, allow_pickle=True)
+    numpy.save('data/' + data_file + '_dictId_songs_{}'.format(min_songs), ArtistIdMapping, allow_pickle=True)
     return ArtistMapping, ArtistIdMapping, train, validation, test
 
 
@@ -188,3 +191,12 @@ def hdf_song_object(min_timbre=100, timbre_width=12):
 
     matlab_file_artist = open('data/dataArtist.mat', 'w')
     scipy.io.savemat(matlab_file_artist, artist_map_id_echo)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print 'usage: python readh5.py min_songs_per_artist'
+        sys.exit()
+
+    min_sngs = int(sys.argv[1])
+    split_data(min_songs=min_sngs)

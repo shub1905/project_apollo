@@ -1,0 +1,26 @@
+learning_rate=0.1, L1_reg=0.001, L2_reg=0, n_epochs=20, batch_size=128, n_hidden=[1500, 1700, 1300, 1000], n_hiddenLayers=4, data_path='data/mfcc_{}.npy'
+test performance 0.781250%
+
+learning_rate=0.1, L1_reg=0, L2_reg=0.1, n_epochs=20, batch_size=128, n_hidden=[1500, 1700, 1300, 1000], n_hiddenLayers=4, data_path='data/mfcc_{}.npy'
+test performance 1.562500
+
+learning_rate=0.01, L1_reg=0, L2_reg=0.0001, n_epochs=1000, batch_size=128, n_hidden=500, n_hiddenLayers=1, data_path='data/mfcc_songs_10_{}.npy'
+actiavtion = sigmoid
+test_performance = 25%
+
+learning_rate=0.01, L1_reg=0.01, L2_reg=0.0001, n_epochs=1000, batch_size=128, n_hidden=500, n_hiddenLayers=1, data_path='data/mfcc_songs_10_{}.npy'
+actiavtion = sigmoid
+test_performance = 17%
+
+DBM: learning_rate=0.1, pretraining_epochs=100, training_epochs=1000, batch_size=10, n_hidden=1000, n_hiddenLayers=1, data_path='data/mfcc_{}.npy'
+actiavtion = sigmoid
+test_performance = .1%
+
+
+knn: weights='distance', n_jobs=-1, p=1
+Accuracy: 8.9552238806
+Accurate: 6/67
+Accuracy: 7.40740740741
+Accurate: 2/27
+Accuracy: 97.4358974359
+Accurate: 190/195

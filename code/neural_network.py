@@ -514,7 +514,7 @@ def train_nn(train_model, validate_model, test_model,
     print('Optimization complete.')
     print('Best validation score of %f %% obtained at iteration %i, '
           'with test performance %f %%' %
-          (best_validation_loss * 100., best_iter + 1, test_score * 100.))
+          ((1-best_validation_loss) * 100., best_iter + 1, (1-test_score) * 100.))
     print(('The training process for function ' +
            calframe[1][3] +
            ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)

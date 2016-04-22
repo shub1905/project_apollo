@@ -11,7 +11,7 @@ from multiprocessing import Lock, Process, Value
 class KNN(object):
 
     def __init__(self):
-        self.train, self.valid, self.test = load_data(data_path='data/mfcc_songs_10_{}.npy', theano_shared=False)
+        (self.train, self.valid, self.test), _ = load_data(data_path='data/mfcc_songs_10_{}.npy', theano_shared=False)
         self.train_x, self.train_y = self.train
         self.test_x, self.test_y = self.test
         self.valid_x, self.valid_y = self.valid

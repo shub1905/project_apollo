@@ -164,5 +164,4 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=100,
 
 
 if __name__ == "__main__":
-    test_mlp(learning_rate=0.1, L1_reg=0.001, L2_reg=0, n_epochs=25, batch_size=128, n_hidden=[
-             1500, 1700, 750, 250], n_hiddenLayers=4, data_path='data/mfcc_{}.npy', verbose=True)
+    test_mlp(learning_rate=0.01, L1_reg=0, L2_reg=0.0001, n_epochs=20, batch_size=20, n_hidden=500, n_hiddenLayers=1, data_path='data/mfcc_songs_10_{}.npy', verbose=True)
