@@ -251,12 +251,12 @@ class SdA(object):
         :type learning_rate: float
         :param learning_rate: learning rate used during finetune stage
         '''
-        datasets = load_data()
+        datasets = load_data(data_path='data/mfcc_{}.npy')
 
-        train_set_x, train_set_y = datasets[0]
-        valid_set_x, valid_set_y = datasets[1]
-        test_set_x, test_set_y = datasets[2]
-
+        train_set_x, train_set_y = datasets[0][0]
+        valid_set_x, valid_set_y = datasets[0][1]
+        test_set_x, test_set_y = datasets[0][2]
+        n_out_neurons = datasets[1]
 
         # compute number of minibatches for training, validation and testing
         n_valid_batches = valid_set_x.get_value(borrow=True).shape[0]
@@ -274,7 +274,8 @@ class SdA(object):
             (param, param - gparam * learning_rate)
             for param, gparam in zip(self.params, gparams)
         ]
-
+        print(train_set_x.shape)
+        print(train_set_y.shape)
         train_fn = theano.function(
             inputs=[index],
             outputs=self.finetune_cost,
@@ -329,7 +330,7 @@ class SdA(object):
         return train_fn, valid_score, test_score
 
 
-def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
+def test_SdA(finetune_lr=0.1, pretraining_epochs=50,
              pretrain_lr=0.001, training_epochs=1000,
              dataset='mnist.pkl.gz', batch_size=100):
     """
@@ -355,12 +356,13 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
 
     """
 
-    datasets = load_data()
+    datasets = load_data(data_path='data/mfcc_{}.npy')
 
-    train_set_x, train_set_y = datasets[0]
-    valid_set_x, valid_set_y = datasets[1]
-    test_set_x, test_set_y = datasets[2]
-
+    train_set_x, train_set_y = datasets[0][0]
+    valid_set_x, valid_set_y = datasets[0][1]
+    test_set_x, test_set_y = datasets[0][2]
+    n_out_neurons = datasets[1]
+    print(n_out_neurons)
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0]
     n_train_batches //= batch_size
@@ -373,8 +375,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
     sda = SdA(
         numpy_rng=numpy_rng,
         n_ins=1200,
-        hidden_layers_sizes=[1500, 2000, 3000],
-        n_outs=967
+        hidden_layers_sizes=[1200],
+        n_outs=n_out_neurons
     )
     # end-snippet-3 start-snippet-4
     #########################
@@ -404,6 +406,8 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
     print(('The pretraining code for file ' +
            os.path.split(__file__)[1] +
            ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
+
+
     # end-snippet-4
     ########################
     # FINETUNING THE MODEL #
@@ -436,7 +440,7 @@ def test_SdA(finetune_lr=0.1, pretraining_epochs=15,
 
     done_looping = False
     epoch = 0
-
+    
     while (epoch < training_epochs) and (not done_looping):
         epoch = epoch + 1
         for minibatch_index in range(n_train_batches):

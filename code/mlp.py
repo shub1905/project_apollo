@@ -155,7 +155,7 @@ class MLP(object):
             input=input,
             n_in=n_in,
             n_out=n_hidden,
-            activation=T.tanh
+            activation=T.nnet.sigmoid
         )
 
         # The logistic regression layer gets as input the hidden units
@@ -409,5 +409,4 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 
 if __name__ == '__main__':
-    test_mlp(learning_rate=0.1, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
-             data_path='data/mfcc_songs_10_{}.npy', batch_size=20, n_hidden=[1500, 1700, 750, 250])
+    test_mlp(learning_rate=0.01,L1_reg=0.00,n_epochs=400,n_hidden=600)
