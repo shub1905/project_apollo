@@ -130,7 +130,7 @@ def make_frame_wise(features, frame_indices):
     out = out.reshape(out.shape[0]*out.shape[1])
     return out
     
-def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='left', folder=DATA_DIR, artist_track_durations= artist_mapping(from_stats_files=True)[1]):
+def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='left', folder=DATA_DIR, artist_track_durations=artist_mapping(from_stats_files=True)[1], suffix=''):
     
     
     artist_track_counts = {key:len([t for t in artist_track_durations[key] if t >= min_duration]) 
@@ -149,10 +149,14 @@ def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='lef
     
     no_frames = 0#int(min_duration/window_width)
     no_columns = 1 + no_frames*24 + 180
+    '''
     for _i in xrange(100):
         if not os.path.isfile(OUTPUT_FILE_DIR+'temp_'+str(_i)):
             break
     data = numpy.memmap(OUTPUT_FILE_DIR+'temp_'+str(_i), dtype='float32', \
+                            mode='w+', shape=(number_rows, no_columns))
+    '''
+    data = numpy.memmap(OUTPUT_FILE_DIR+'temp_'+suffix, dtype='float32', \
                             mode='w+', shape=(number_rows, no_columns))
     _files = parse_data_files(folder)
 
@@ -216,7 +220,7 @@ def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='lef
     numpy.save(OUTPUT_FILE_DIR + 'valid', data[~train_idx][valid_idx], allow_pickle=True)
     numpy.save(OUTPUT_FILE_DIR + 'test', data[~train_idx][test_idx], allow_pickle=True)
     '''
-    output = numpy.memmap(OUTPUT_FILE_DIR+'features_'+str(_i), \
+    output = numpy.memmap(OUTPUT_FILE_DIR+'features_'+suffix, \
                                        dtype='float32', mode='w+', shape=(counter, no_columns))
     output[:counter, :] = data[:counter, :]
     data.flush()
@@ -225,6 +229,7 @@ def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='lef
 if __name__ == '__main__':
 
     artist_names, artist_track_durations = artist_mapping(from_stats_files=True)
-    for fldr1 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+    for fldr1 in 'JKLMNOPQRSTUVWXYZ':
         for fldr2 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-            generate_data(folder=DATA_DIR+fldr1+'/'+fldr2+'/', artist_track_durations=artist_track_durations)
+            print DATA_DIR+fldr1+'/'+fldr2+'/'
+            generate_data(folder=DATA_DIR+fldr1+'/'+fldr2+'/', artist_track_durations=artist_track_durations, suffix=fldr1+'_'+fldr2)
