@@ -16,9 +16,13 @@ train_y = pandas.get_dummies(train[:,0])
 
 print no_classes, train.shape
 
+train = train[:201]
+validate = validate[:201]
+test = test[:201]
+
 for l1_ratio in [.1, .5, .7, .9, .95, .99, 1]:
     
-    model = MultiTaskElasticNetCV(l1_ratio=l1_ratio, normalize=True, verbose=True)
+    model = MultiTaskElasticNetCV(l1_ratio=l1_ratio, normalize=True, verbose=True, n_jobs=3)
     model.fit(train[:,1:], train_y)
     predicted_classes = (model.predict(validate[:,1:])).argmax(1)
     
