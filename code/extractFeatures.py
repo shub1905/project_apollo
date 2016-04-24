@@ -14,25 +14,32 @@ import pickle
 import time
 
 import numpy
+import gc
 
 start_time = time.time()
 
 segments_timbre_size = 100
 
-DATA_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
+#DATA_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
+#OUTPUT_FILE_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
+#META_FILE_DIR = OUTPUT_FILE_DIR#'/home/patanjali/courses/4772/project/project_apollo/data/'
+import sys
+#print sys.argv[1], sys.argv[2]
 
-OUTPUT_FILE_DIR = '/home/patanjali/courses/4772/project/MillionSongSubset/data/'
-META_FILE_DIR = OUTPUT_FILE_DIR#'/home/patanjali/courses/4772/project/project_apollo/data/'
+DATA_DIR = '/home/ubuntu/msds/data/'
+# + sys.argv[1] + '/' + sys.argv[2] + '/'
+OUTPUT_FILE_DIR = '/home/ubuntu/msds/'
+META_FILE_DIR = '/home/ubuntu/project_apollo/data/'
 
 #%%
 
 def parse_data_files(folder=DATA_DIR):
     
-    if not os.path.exists(DATA_DIR):
-        print DATA_DIR, ' does not exist'
+    if not os.path.exists(folder):
+        print folder, ' does not exist'
         raise
 
-    file_path_gen = os.walk(DATA_DIR)
+    file_path_gen = os.walk(folder)
     for root, dirs, file_names in file_path_gen:
         for file_ in file_names:
             yield root + '/' + file_
@@ -123,9 +130,8 @@ def make_frame_wise(features, frame_indices):
     out = out.reshape(out.shape[0]*out.shape[1])
     return out
     
-def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='left'):
+def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='left', folder=DATA_DIR, artist_track_durations= artist_mapping(from_stats_files=True)[1]):
     
-    artist_names, artist_track_durations = artist_mapping(from_stats_files=True)
     
     artist_track_counts = {key:len([t for t in artist_track_durations[key] if t >= min_duration]) 
                                         for key in artist_track_durations}
@@ -136,15 +142,19 @@ def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='lef
     #print counts
     number_rows = sum(counts)
     artist_idxs = dict(zip(sorted(artist_track_counts.keys()), range(len(artist_track_counts))))
+    #del artist_names
+    #del artist_track_durations
+    del artist_track_counts
+    gc.collect()
     
-    no_frames = int(min_duration/window_width)
+    no_frames = 0#int(min_duration/window_width)
     no_columns = 1 + no_frames*24 + 180
     for _i in xrange(100):
         if not os.path.isfile(OUTPUT_FILE_DIR+'temp_'+str(_i)):
             break
     data = numpy.memmap(OUTPUT_FILE_DIR+'temp_'+str(_i), dtype='float32', \
                             mode='w+', shape=(number_rows, no_columns))
-    _files = parse_data_files()
+    _files = parse_data_files(folder)
 
     print 'Reading Data...'
     print number_rows, no_columns, len(artist_idxs)
@@ -176,9 +186,9 @@ def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='lef
         artist_idx = artist_idxs[_artist_id]
         data[counter][0] = artist_idx
         
-        frame_indices = make_frame_indices(starts, min_duration, window_width)
-        data[counter][1:(no_frames*12+1)] = make_frame_wise(timbres, frame_indices)
-        data[counter][(no_frames*12+1):(no_frames*24+1)] = make_frame_wise(pitches, frame_indices)
+        #frame_indices = make_frame_indices(starts, min_duration, window_width)
+        #data[counter][1:(no_frames*12+1)] = make_frame_wise(timbres, frame_indices)
+        #data[counter][(no_frames*12+1):(no_frames*24+1)] = make_frame_wise(pitches, frame_indices)
         
         data[counter][(no_frames*24+1):(no_frames*24+13)] = numpy.mean(timbres,0)
         data[counter][(no_frames*24+13):(no_frames*24+91)] = numpy.cov(timbres, rowvar=False)[numpy.triu_indices(12)]
@@ -189,7 +199,7 @@ def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='lef
         #data[counter][min_segments*12+1] = timbres.shape[0]
                
         counter += 1
-        if counter % 10 == 0:
+        if counter % 1000 == 0:
             print counter, time.time()-start_time
         f.close()
     
@@ -213,4 +223,8 @@ def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='lef
     output.flush()
 
 if __name__ == '__main__':
-    generate_data()
+
+    artist_names, artist_track_durations = artist_mapping(from_stats_files=True)
+    for fldr1 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+        for fldr2 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            generate_data(folder=DATA_DIR+fldr1+'/'+fldr2+'/', artist_track_durations=artist_track_durations)
