@@ -130,7 +130,9 @@ def make_frame_wise(features, frame_indices):
     out = out.reshape(out.shape[0]*out.shape[1])
     return out
     
-def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='left', folder=DATA_DIR, artist_track_durations=artist_mapping(from_stats_files=True)[1], suffix=''):
+def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='left', 
+                  folder=DATA_DIR, artist_track_durations=artist_mapping(from_stats_files=True)[1], 
+                    suffix='', memmap=False):
     
     
     artist_track_counts = {key:len([t for t in artist_track_durations[key] if t >= min_duration]) 
@@ -156,8 +158,11 @@ def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='lef
     data = numpy.memmap(OUTPUT_FILE_DIR+'temp_'+str(_i), dtype='float32', \
                             mode='w+', shape=(number_rows, no_columns))
     '''
-    data = numpy.memmap(OUTPUT_FILE_DIR+'temp_'+suffix, dtype='float32', \
+    if memmap:
+        data = numpy.memmap(OUTPUT_FILE_DIR+'temp_'+suffix, dtype='float32', \
                             mode='w+', shape=(number_rows, no_columns))
+    else:
+        data = numpy.zeros((number_rows, no_columns), dtype='float32')
     _files = parse_data_files(folder)
 
     print 'Reading Data...'
@@ -195,9 +200,11 @@ def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='lef
         #data[counter][(no_frames*12+1):(no_frames*24+1)] = make_frame_wise(pitches, frame_indices)
         
         data[counter][(no_frames*24+1):(no_frames*24+13)] = numpy.mean(timbres,0)
-        data[counter][(no_frames*24+13):(no_frames*24+91)] = numpy.cov(timbres, rowvar=False)[numpy.triu_indices(12)]
+        data[counter][(no_frames*24+13):(no_frames*24+91)] = \
+                            numpy.cov(timbres, rowvar=False)[numpy.triu_indices(12)]
         data[counter][(no_frames*24+91):(no_frames*24+103)] = numpy.mean(pitches,0)
-        data[counter][(no_frames*24+103):(no_frames*24+181)] = numpy.cov(pitches, rowvar=False)[numpy.triu_indices(12)]
+        data[counter][(no_frames*24+103):(no_frames*24+181)] =\
+                            numpy.cov(pitches, rowvar=False)[numpy.triu_indices(12)]
         #data[counter][(min_segments*12+4)] = (starts[1:] - starts[:-1]).mean()
         #data[counter][(min_segments*12+2):(min_segments*12+14)] = timbres.value.mean(0)
         #data[counter][min_segments*12+1] = timbres.shape[0]
@@ -220,16 +227,26 @@ def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='lef
     numpy.save(OUTPUT_FILE_DIR + 'valid', data[~train_idx][valid_idx], allow_pickle=True)
     numpy.save(OUTPUT_FILE_DIR + 'test', data[~train_idx][test_idx], allow_pickle=True)
     '''
-    output = numpy.memmap(OUTPUT_FILE_DIR+'features_'+suffix, \
+    if memmap:
+        output = numpy.memmap(OUTPUT_FILE_DIR+'features_'+suffix, \
                                        dtype='float32', mode='w+', shape=(counter, no_columns))
-    output[:counter, :] = data[:counter, :]
-    data.flush()
-    output.flush()
-
+        data.flush()
+        output.flush()
+    else:
+        data = data[:counter, :]
+        numpy.savez_compressed(OUTPUT_FILE_DIR+'data_'+suffix+'.npz', data=data)
+        
 if __name__ == '__main__':
 
     artist_names, artist_track_durations = artist_mapping(from_stats_files=True)
+    '''
     for fldr1 in 'JKLMNOPQRSTUVWXYZ':
         for fldr2 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             print DATA_DIR+fldr1+'/'+fldr2+'/'
             generate_data(folder=DATA_DIR+fldr1+'/'+fldr2+'/', artist_track_durations=artist_track_durations, suffix=fldr1+'_'+fldr2)
+    '''
+    for fldr1 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+        print fldr1
+        generate_data(folder=DATA_DIR+fldr1+'/', artist_track_durations=artist_track_durations, 
+                          suffix=fldr1)
+    
