@@ -130,7 +130,7 @@ def make_frame_wise(features, frame_indices):
     out = out.reshape(out.shape[0]*out.shape[1])
     return out
     
-def generate_data(min_duration=60, min_songs=10, window_width=.1, averaging='left', 
+def generate_data(min_duration=60, min_songs=20, window_width=.1, averaging='left', 
                   folder=DATA_DIR, artist_track_durations=artist_mapping(from_stats_files=True)[1], 
                     suffix='', memmap=False):
     
@@ -245,7 +245,10 @@ if __name__ == '__main__':
             print DATA_DIR+fldr1+'/'+fldr2+'/'
             generate_data(folder=DATA_DIR+fldr1+'/'+fldr2+'/', artist_track_durations=artist_track_durations, suffix=fldr1+'_'+fldr2)
     '''
-    for fldr1 in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+#    for fldr1 in 'ABCD':
+#    for fldr1 in 'EFGHIJKLM':
+#    for fldr1 in 'RSTU':
+    for fldr1 in 'VWXYZ':
         print fldr1
         generate_data(folder=DATA_DIR+fldr1+'/', artist_track_durations=artist_track_durations, 
                           suffix=fldr1)
