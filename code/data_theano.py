@@ -24,9 +24,9 @@ def load_data(data_path='data/mfcc_{}.npy', theano_shared=True):
         train = numpy.load(data_path.format('train'))['arr_0']
         valid = numpy.load(data_path.format('valid'))['arr_0']
     else:
-        test = numpy.load(data_path.format('test'))['arr_0']
-        train = numpy.load(data_path.format('train'))['arr_0']
-        valid = numpy.load(data_path.format('valid'))['arr_0']
+        test = numpy.load(data_path.format('test'))
+        train = numpy.load(data_path.format('train'))
+        valid = numpy.load(data_path.format('valid'))
 
     train_y, _, train_x = numpy.split(train, [1, 1], axis=1)
     test_y, _, test_x = numpy.split(test, [1, 1], axis=1)
