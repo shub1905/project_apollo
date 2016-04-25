@@ -19,9 +19,14 @@ def shared_dataset(data_x, data_y, borrow=True):
 
 
 def load_data(data_path='data/mfcc_{}.npy', theano_shared=True):
-    test = numpy.load(data_path.format('test'))
-    train = numpy.load(data_path.format('train'))
-    valid = numpy.load(data_path.format('valid'))
+    if data_path.endswith('npz'):
+        test = numpy.load(data_path.format('test'))['arr_0']
+        train = numpy.load(data_path.format('train'))['arr_0']
+        valid = numpy.load(data_path.format('valid'))['arr_0']
+    else:
+        test = numpy.load(data_path.format('test'))['arr_0']
+        train = numpy.load(data_path.format('train'))['arr_0']
+        valid = numpy.load(data_path.format('valid'))['arr_0']
 
     train_y, _, train_x = numpy.split(train, [1, 1], axis=1)
     test_y, _, test_x = numpy.split(test, [1, 1], axis=1)
@@ -35,6 +40,7 @@ def load_data(data_path='data/mfcc_{}.npy', theano_shared=True):
     print valid_x.shape, valid_y.shape
     print test_x.shape, test_y.shape
     if theano_shared:
-        return (shared_dataset(train_x, train_y), shared_dataset(valid_x, valid_y), shared_dataset(test_x, test_y)), len(set(valid_y))
+        return (shared_dataset(train_x, train_y), shared_dataset(valid_x, valid_y), 
+                    shared_dataset(test_x, test_y)), len(set(valid_y))
     else:
         return ((train_x, train_y), (valid_x, valid_y), (test_x, test_y)), len(set(valid_y))
